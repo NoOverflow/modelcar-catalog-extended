@@ -1,0 +1,15 @@
+FROM alpine/curl:latest AS base
+RUN curl -o /tmp/yolo.pt https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11l-seg.pt
+
+FROM python:3.9-slim-bullseye AS convert
+RUN pip install ultralytics
+COPY --from=base /tmp/yolo.pt /tmp/yolo.pt
+COPY convert.py /convert.py
+RUN python /convert.py
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:9.6
+COPY --from=convert /tmp/yolo.onnx /models/yolov11/1/model.onnx
+COPY --from=convert /tmp/config.pbtxt /models/yolov11/config.pbtxt
+
+# Set the user to 1001
+USER 1001
